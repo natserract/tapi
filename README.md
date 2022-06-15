@@ -24,11 +24,11 @@ Models -> DAL -> Coordinator -> Controllers
       Model Attributes
       Create Attributes
     Property
-      Table Name
-      Primary Key Attribute
-      Primary Key Attributes
-      Associations
-      Options
+      Table Name ()
+      Primary Key Attribute () 
+      Primary Key Attributes ()
+      Associations ()
+      Options ()
       ...
     --
     -- DAL (database abstraction layer)
@@ -58,7 +58,7 @@ Models -> DAL -> Coordinator -> Controllers
               Model Update Attributes
             Sub
               Create Coordinator -- Based on Param
-                Create
+                Create ()
               Read Coordinator
                 Get Plain ()
                 Get ()
@@ -74,3 +74,10 @@ Models -> DAL -> Coordinator -> Controllers
                 Bath Delete ()
               ---
 ```
+localEx :: [[Char]]
+localEx = do
+  a <- (\step -> do
+          name <- "Alfin"
+          return (step ++ [name])
+        ) "First"
+  return a
