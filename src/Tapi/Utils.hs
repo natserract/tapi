@@ -1,2 +1,11 @@
 {-# LANGUAGE GADTs #-}
-module Tapi.Utils where
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeOperators #-}
+
+module Tapi.Utils (
+  Generic
+) where
+import Data.Kind (Constraint)
+
+
+type Generic i o = forall x. i x -> o x
