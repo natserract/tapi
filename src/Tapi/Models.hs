@@ -12,13 +12,14 @@
 
 module Tapi.Models
   ( createModel
-  , setModelOptions
+  -- , setModelOptions
   , Models(..)
   , ModelCtor(..)
   , ModelOptions(..)
   , ModelsT
   , CreateOptions(..)
   , FindOptions (..)
+  , SaveOptions
 ) where
 
 import Prelude hiding (id, init)
@@ -33,19 +34,19 @@ data ColumnOptions
     , defaultValue :: ()
   }
 
-data ModelOptions m
+data ModelOptions
   = ModelOptions {
-      omitNull :: Bool
+      omitNullModelOpt :: Bool
     , timestamps :: Bool
     , paranoid :: Bool
     , primaryKey :: Bool
     , values :: [String]
   }
 
-instance (Show (ModelOptions m)) where
+instance (Show ModelOptions) where
   show v = unlines 
     [ "Options {"
-     , " omitNull         = " ++ show (omitNull v)
+     , " omitNullModelOpt         = " ++ show (omitNullModelOpt v)
      , " timestamps       = " ++ show (timestamps v)
      , " paranoid         = " ++ show (paranoid v)
      , " primaryKey       = " ++ show (primaryKey v)
@@ -54,19 +55,36 @@ instance (Show (ModelOptions m)) where
     ]
 
 -- | Show all model options
-showOptions :: ModelOptions a -> String
+showOptions :: ModelOptions -> String
 showOptions = show
 
 data ModelCtor m
   = ModelCtor ColumnOptions
   | Unkown
 
+data SetOptions
+  = SetOptions {
+     raw :: Bool
+    , reset :: Bool
+  }
+
+newtype KeyOfAttributes m = KeyOfAttributes m
+
+data Manager m
+  = Manager {
+      setAttributes :: forall key. key -> SetOptions -> KeyOfAttributes m
+    , setOptions' :: ModelOptions -> ModelOptions
+  }
+
 type ModelName = String;
 
 type family GetArg m o;
 type instance GetArg m (Option a) = m;
-type instance GetArg m (ModelOptions m) = ModelCtor m;
+type instance GetArg m ModelOptions = ModelCtor m;
 
+-- | The interface for Models
+type ModelsT a b 
+  = (Models a b, Monad ModelCtor) => ModelCtor a
 class Models (m :: *) (c :: *) | m -> c where
   type family Values c;
   
@@ -74,17 +92,11 @@ class Models (m :: *) (c :: *) | m -> c where
   init ::
     m
     -> ModelName
-    -> ModelOptions m
+    -> ModelOptions
     -> ModelCtor m
   -- 
-  -- Set model options
-  setOptions :: a -> ModelOptions m
-  -- 
-  -- Returns all values of the instance
-  -- getValues :: GetArg m ModelOptions;
-  -- 
-  -- Set value
-  -- toJSON
+  -- Manage model options
+  manage :: m -> Manager m  
 
 instance (Models a b, Monad ModelCtor) => Models a b where
   type Values b = b;
@@ -93,7 +105,7 @@ instance (Models a b, Monad ModelCtor) => Models a b where
     let return' = init modelAtrr modelName modelOpt
     case modelOpt of {
       ModelOptions {
-        omitNull = False
+        omitNullModelOpt = False
       } ->
         -- Do some action here!
         -- Depend on options
@@ -104,25 +116,20 @@ instance (Models a b, Monad ModelCtor) => Models a b where
     }
     return'
 
-  setOptions = setOptions
-  -- getValues = getValues;
+  manage = manage
 
 
 -- | Synonym for `init`
 createModel :: (Models a b, Monad ModelCtor) =>
   a
   -> ModelName
-  -> ModelOptions a
+  -> ModelOptions
   -> ModelCtor a
 createModel = init
 
--- | Synonym for `setOptions`
-setModelOptions :: (Models a b, Monad ModelCtor) => a -> ModelOptions a
-setModelOptions = setOptions
-
--- | The interface for Models
-type ModelsT a b 
-  = (Models a b, Monad ModelCtor) => ModelCtor a
+-- | Synonym for `manage`
+manageOptions :: (Models a b) => a -> Manager a
+manageOptions = manage
 
 -- 
 -- | Options
@@ -134,10 +141,10 @@ type instance CreateOptionsReturning [ss] = [ss]
 -- | Representation for Model.create options method
 data CreateOptions opt
   = CreateOptions {
-      fields :: [opt]
+      fieldsCreateOpt :: [opt]
     , ignoreDuplicates :: Bool
     , returning :: CreateOptionsReturning opt
-    , validate :: (:=) Bool
+    , validateCreateOpt :: (:=) Bool
     -- Dont' confuse ^ is just a synonym of Bool :: * (one kind)
   }
 data Order
@@ -159,4 +166,11 @@ data FindOptions opt
     , order :: Order
     , limit :: Integer
     , offset :: Integer
+  }
+
+data SaveOptions opt
+  = SaveOptions {
+      fieldsSaveOpt :: [opt]
+    , validateSaveOpt :: Bool
+    , omitNullSaveOpt :: Bool
   }

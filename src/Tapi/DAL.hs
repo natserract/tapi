@@ -1,11 +1,14 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Tapi.Dal 
   () where
 
-import Tapi.Models (CreateOptions, FindOptions, Models)
+import Tapi.Models (CreateOptions, FindOptions, Models, SaveOptions)
 import Data.Semigroup (Option)
 
 type ID = Integer;
@@ -16,14 +19,17 @@ data DALMethod
     , createAny' ::  forall c opt m. c -> Maybe (CreateOptions opt) -> m
   } 
 
-class DAL m c u | m -> c, m -> u where
-  type family DalModelCtor m
-  type family DalValues c
+class DAL m a where
+  type family CreationAttributes a
+  type family UpdateAttributesT a
 
-  create :: DalValues c -> Maybe (CreateOptions m)
-  createAny :: DalValues c -> Maybe (CreateOptions opt) -> m
-  whereF :: FindOptions m -> [m]
-  get :: ID -> Maybe (FindOptions m) -> Maybe m
-  first :: FindOptions m -> m
-  update :: m -> u -> FindOptions m -> m
-  updateAny :: m -> u -> m
+  create :: CreationAttributes a -> a -> Maybe (CreateOptions opt) -> m
+  update :: m -> UpdateAttributesT a -> a -> SaveOptions m -> m
+
+
+instance Models moM moC => DAL moM moC where
+  type CreationAttributes moC = moC
+  type UpdateAttributesT moC = moC
+
+  create = create
+  update = update

@@ -7,11 +7,7 @@ import Tapi.Models
     ( createModel,
       Models,
       ModelCtor,
-      ModelOptions(
-          ModelOptions
-        , omitNull
-        , timestamps
-        , paranoid),
+      ModelOptions(..),
       ModelsT
     )
 
@@ -34,7 +30,7 @@ applyWaitlistModel  = do
   }
 
   let options  =  ModelOptions {
-    omitNull = False
+    omitNullModelOpt = False
     , timestamps = False
     , paranoid = False
   }
