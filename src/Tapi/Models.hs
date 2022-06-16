@@ -8,65 +8,95 @@
 
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DataKinds #-}
 
 module Tapi.Models
-  (
-    createModel,
-    setModelOptions,
+  ( createModel
+  , setModelOptions
+  , Models(..)
+  , ModelCtor(..)
+  , ModelOptions(..)
+  , ModelsT
+  , CreateOptions(..)
+  , FindOptions (..)
+) where
 
-    ModelCtor(..),
-    ModelOptions(..),
-    ModelsT,
-
-    -- Exports the class, the associated type Models and the member functions 
-    Models(..)
-  ) where
-
-import Data.Void ( Void )
 import Prelude hiding (id, init)
-import Data.Data (Proxy)
 
-import Tapi.Utils (Generic)
+import Tapi.Utils (Generic, (:=))
+import Data.Semigroup (Option)
 
-data ColumnOptions = ColumnOptions {
-    allowNull :: Bool
-  , field :: String
-  , defaultValue :: Void
-}
+data ColumnOptions
+  = ColumnOptions {
+      allowNull :: Bool
+    , field :: String
+    , defaultValue :: ()
+  }
 
-data ModelOptions = ModelOptions {
-    omitNull :: Bool
-  , timestamps :: Bool
-  , paranoid :: Bool
-}
+data ModelOptions m
+  = ModelOptions {
+      omitNull :: Bool
+    , timestamps :: Bool
+    , paranoid :: Bool
+    , primaryKey :: Bool
+    , values :: [String]
+  }
 
-data ModelAttributes a = ModelAttributes {
-    primaryKey :: Bool
-  , values :: [String]
-  , getDataValue :: a -> Proxy a
-}
+instance (Show (ModelOptions m)) where
+  show v = unlines 
+    [ "Options {"
+     , " omitNull         = " ++ show (omitNull v)
+     , " timestamps       = " ++ show (timestamps v)
+     , " paranoid         = " ++ show (paranoid v)
+     , " primaryKey       = " ++ show (primaryKey v)
+     , " values           = " ++ show (values v)
+     , "}"
+    ]
 
-data ModelCtor m =  ModelCtor (ModelAttributes m)  ColumnOptions
+-- | Show all model options
+showOptions :: ModelOptions a -> String
+showOptions = show
+
+data ModelCtor m
+  = ModelCtor ColumnOptions
+  | Unkown
 
 type ModelName = String;
 
+type family GetArg m o;
+type instance GetArg m (Option a) = m;
+type instance GetArg m (ModelOptions m) = ModelCtor m;
+
 class Models (m :: *) (c :: *) | m -> c where
+  type family Values c;
+  
   -- Return the initialized model
   init ::
     m
     -> ModelName
-    -> ModelOptions
+    -> ModelOptions m
     -> ModelCtor m
   -- 
   -- Set model options
-  setOptions :: m -> ModelOptions
+  setOptions :: a -> ModelOptions m
+  -- 
+  -- Returns all values of the instance
+  -- getValues :: GetArg m ModelOptions;
+  -- 
+  -- Set value
+  -- toJSON
 
 instance (Models a b, Monad ModelCtor) => Models a b where
+  type Values b = b;
+
   init modelAtrr modelName modelOpt = do
     let return' = init modelAtrr modelName modelOpt
-    case modelOpt of { 
-      ModelOptions True _ _ ->
+    case modelOpt of {
+      ModelOptions {
+        omitNull = False
+      } ->
         -- Do some action here!
+        -- Depend on options
         -- ...
         return'
       ;
@@ -75,19 +105,58 @@ instance (Models a b, Monad ModelCtor) => Models a b where
     return'
 
   setOptions = setOptions
+  -- getValues = getValues;
+
 
 -- | Synonym for `init`
 createModel :: (Models a b, Monad ModelCtor) =>
   a
   -> ModelName
-  -> ModelOptions
+  -> ModelOptions a
   -> ModelCtor a
 createModel = init
 
 -- | Synonym for `setOptions`
-setModelOptions :: (Models a b, Monad ModelCtor) => a -> ModelOptions
+setModelOptions :: (Models a b, Monad ModelCtor) => a -> ModelOptions a
 setModelOptions = setOptions
 
--- | Reusable, generic `Models` type 
-type ModelsT a b = 
-  (Models a b, Monad ModelCtor) => ModelCtor a
+-- | The interface for Models
+type ModelsT a b 
+  = (Models a b, Monad ModelCtor) => ModelCtor a
+
+-- 
+-- | Options
+-- 
+type family CreateOptionsReturning k
+type instance CreateOptionsReturning Bool = Bool
+type instance CreateOptionsReturning [ss] = [ss]
+
+-- | Representation for Model.create options method
+data CreateOptions opt
+  = CreateOptions {
+      fields :: [opt]
+    , ignoreDuplicates :: Bool
+    , returning :: CreateOptionsReturning opt
+    , validate :: (:=) Bool
+    -- Dont' confuse ^ is just a synonym of Bool :: * (one kind)
+  }
+data Order
+  = Fn
+  | Col
+  | Literal
+  | OrderItems
+
+data Includeable
+  = Includeable {
+      all :: Bool
+    , nested :: Maybe Bool 
+  }
+
+-- | Representation for Options that are passed to any model creating a SELECT query
+data FindOptions opt
+  = FindOptions {
+      include:: Includeable
+    , order :: Order
+    , limit :: Integer
+    , offset :: Integer
+  }

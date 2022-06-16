@@ -4,6 +4,7 @@ Designing software with types.
 Some words:
 - "design flexible and reusable object-oriented software"
 - "that is, objects that are easier to implement, change, test, and reuse."
+- "Software Http types for sever"
 
 Domain (TLD) Structure:
 

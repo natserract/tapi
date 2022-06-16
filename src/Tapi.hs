@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MonoLocalBinds #-}
+
 module Tapi (someFunc) where
 
 import Tapi.Models
@@ -11,7 +12,7 @@ import Tapi.Models
         , omitNull
         , timestamps
         , paranoid),
-      ModelsT 
+      ModelsT
     )
 
 data WaitlistAttributes = WaitlistAttributes {
@@ -20,8 +21,7 @@ data WaitlistAttributes = WaitlistAttributes {
   , email :: String
   , phone :: String
 }
-
-data WaitlistCreationAttributes = WaitlistCreationAttributes 
+data WaitlistCreationAttributes = WaitlistCreationAttributes
   String String String
 
 applyWaitlistModel :: ModelsT WaitlistAttributes WaitlistCreationAttributes
@@ -31,7 +31,7 @@ applyWaitlistModel  = do
     name = "",
     email = "",
     phone = ""
-  } 
+  }
 
   let options  =  ModelOptions {
     omitNull = False
@@ -42,5 +42,5 @@ applyWaitlistModel  = do
   createModel attr "Waitlist" options
 
 someFunc :: IO ()
-someFunc = 
+someFunc = do
   putStrLn "Hello Haskell"
