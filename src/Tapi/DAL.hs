@@ -8,23 +8,20 @@
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 
 module Tapi.Dal
-  () where
+  ( DAL (..)
+  , 
+  ) where
 
 import           Data.Semigroup (Option)
 import     qualified      Tapi.Models   as M
 import Data.Void (Void)
--- import Tapi.Models (FindOptions(whereOps, limit), WhereOptions)
+import Control.Exception (try, throw)
+import GHC.IO.Exception (IOException(IOError))
+import Control.Monad (void)
+import Foreign.C (throwErrnoIf)
+import qualified Control.Exception as E
 
 type ID = Integer;
-
-data DALMethod
-  = DALMethod {
-      create'    :: forall c m. c -> Maybe (M.CreateOptions m)
-    , createAny' :: forall c opt m. c -> Maybe (M.CreateOptions opt) -> m
-  }
-
-data Nil;
-
 class DAL m a | m -> a where
   type family CreationAttributes a
   type family UpdateAttributesT a
@@ -33,25 +30,34 @@ class DAL m a | m -> a where
     m -> 
     Maybe (CreationAttributes a) -> 
     Maybe (M.CreateOptions m) -> 
-    Void
+    Either M.Error Void
 
   get ::
     m ->
     Integer ->
     Maybe (M.FindOptions m) ->
-    Void
+    Either M.Error Void
 
-instance M.Models moM mAttr => DAL moM mAttr where
-  type CreationAttributes mAttr = mAttr
-  type UpdateAttributesT mAttr = mAttr
+instance M.Models m a => DAL m a where
+  type CreationAttributes a = a
+  type UpdateAttributesT a = a
 
-  create
-    = M.create
+  create = M.create
 
-  get m id ops
-    = M.findByPk m Nothing (Just M.FindOptions {
+  get m id ops = 
+    let result = M.findByPk m Nothing (Just M.FindOptions {
       -- Here, omitted where options
       --  whereOps = Just M.WhereAttributeHash  
       whereOps = Nothing
       , ..
-    })
+      -- .^ symbol (..), all field labels are brought into scope
+    }) in
+    case result of
+      Left errT -> error $ throwErr errT
+      _ -> result
+
+-- | Throwing error based on `M.Error`
+throwErr :: M.Error -> [Char]
+throwErr errT' = case errT' of
+  M.DatabaseError -> "Database Error!"
+  M.NilValue -> "Object is Nil!"

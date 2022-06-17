@@ -9,19 +9,20 @@
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Tapi.Models
   ( createModel
-  -- , setModelOptions
-  , Models(..)
-  , ModelCtor(..)
-  , ModelOptions(..)
   , ModelsT
+  , Models(..)
+  , ModelReturnT(..)
+  , ModelOptions(..)
   , CreateOptions (..)
   , FindOptions (..)
   , SaveOptions (..)
   , ColumnOptions (..)
   , WhereOptions(..)
+  , Error(..)
 ) where
 
 import           Prelude        hiding (id, init)
@@ -29,6 +30,7 @@ import           Prelude        hiding (id, init)
 import           Data.Semigroup (Option)
 import           Data.Void      (Void)
 import           Tapi.Utils     (Generic, RecordAccessor, getRecord, (:=))
+import Data.Data (Typeable)
 
 data ColumnOptions
   = ColumnOptions {
@@ -75,8 +77,8 @@ instance (Show ModelOptions) where
 showOptions :: ModelOptions -> String
 showOptions = show
 
-data ModelCtor m
-  = ModelCtor ColumnOptions
+data ModelReturnT m
+  = ModelReturnT ColumnOptions
   | Unkown
 
 data SetOptions
@@ -97,17 +99,21 @@ type ModelName = String;
 
 type family GetArg m o;
 type instance GetArg m (Option a) = m;
-type instance GetArg m ModelOptions = ModelCtor m;
+type instance GetArg m ModelOptions = ModelReturnT m;
+
+data Error
+  = DatabaseError 
+  | NilValue
+  deriving (Show, Typeable)
 
 data Identifier
   = IdentifierStr String
   | IdentifierNum Integer
   | IdentifierV Void
 
-
 -- | The interface for Models
 type ModelsT a b
-  = (Models a b, Monad ModelCtor) => ModelCtor a
+  = (Models a b) => ModelReturnT a
 
 class Models (m :: *) (a :: *) | m -> a where
   type family CreationAttributes a
@@ -118,7 +124,7 @@ class Models (m :: *) (a :: *) | m -> a where
     m
     -> ModelName
     -> ModelOptions
-    -> ModelCtor m
+    -> ModelReturnT m
   --
   -- Manage model
   manageModel :: 
@@ -129,49 +135,48 @@ class Models (m :: *) (a :: *) | m -> a where
     m
     -> Maybe a
     -> Maybe ops
-    -> Void
+    -> Either Error Void
   -- 
   -- Search for a single instance by its primary key
   findByPk ::
     m
     -> Maybe Identifier
     -> Maybe ops
-    -> Void
+    -> Either Error Void
   -- 
   -- ...
 
-
 -- | Scale up in future!
--- instance (Models m c, Monad ModelCtor) => Models m c where
---   type CreationAttributes c = c;
---   type UpdateAttributesT c = c;
+instance (Models m c, Monad ModelReturnT) => Models m c where
+  type CreationAttributes c = c;
+  type UpdateAttributesT c = c;
 
---   initModel modelAtrr modelName modelOpt = do
---     let return' = initModel modelAtrr modelName modelOpt
---     case modelOpt of {
---       ModelOptions {
---         omitNullModelOpt = False
---       } ->
---         -- Do some action here!
---         -- Depend on options
---         -- ...
---         return'
---       ;
---       ModelOptions {..} -> ModelCtor {};
---     }
---     return'
+  initModel modelAtrr modelName modelOpt = do
+    let return' = initModel modelAtrr modelName modelOpt
+    case modelOpt of {
+      ModelOptions {
+        omitNullModelOpt = False
+      } ->
+        -- Do some action here!
+        -- Depend on options
+        -- ...
+        return'
+      ;
+      ModelOptions {..} -> ModelReturnT {};
+    }
+    return'
 
---   manageModel = manageModel
---   create = create
---   findByPk = findByPk
+  manageModel = manageModel
+  create = create
+  findByPk = findByPk
 
 
 -- | Synonym for `init`
-createModel :: (Models a b, Monad ModelCtor) =>
-  a
+createModel :: (Models m a) =>
+  m
   -> ModelName
   -> ModelOptions
-  -> ModelCtor a
+  -> ModelReturnT m
 createModel = initModel
 
 -- | Synonym for `manage`

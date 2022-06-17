@@ -6,10 +6,10 @@ module Tapi (someFunc) where
 import Tapi.Models
     ( createModel,
       Models,
-      ModelCtor,
+      ModelReturnT,
       ModelOptions(..),
       ModelsT,
-      ColumnOptions
+      ColumnOptions, Error
     )
 import Control.Arrow (Arrow(first, second))
 
@@ -40,6 +40,13 @@ applyWaitlistModel  = do
   createModel attr "Waitlist" options
 
 -- mkArchitect
+
+go :: Either Error Bool -> String
+go a = 
+  case a of
+    Left void -> "Void"
+    Right True -> "True"
+
 
 someFunc :: IO ()
 someFunc = do
