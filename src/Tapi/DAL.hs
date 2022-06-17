@@ -53,11 +53,5 @@ instance M.Models m a => DAL m a where
       -- .^ symbol (..), all field labels are brought into scope
     }) in
     case result of
-      Left errT -> error $ throwErr errT
+      Left errT -> error $ M.throwErrMsg errT
       _ -> result
-
--- | Throwing error based on `M.Error`
-throwErr :: M.Error -> [Char]
-throwErr errT' = case errT' of
-  M.DatabaseError -> "Database Error!"
-  M.NilValue -> "Object is Nil!"

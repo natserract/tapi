@@ -23,6 +23,7 @@ module Tapi.Models
   , ColumnOptions (..)
   , WhereOptions(..)
   , Error(..)
+  , throwErrMsg
 ) where
 
 import           Prelude        hiding (id, init)
@@ -105,6 +106,12 @@ data Error
   = DatabaseError 
   | NilValue
   deriving (Show, Typeable)
+
+-- | Throwing error based on `M.Error`
+throwErrMsg :: Error -> [Char]
+throwErrMsg err = case err of
+  DatabaseError -> "Database Error!"
+  NilValue -> "Object is Nil!"
 
 data Identifier
   = IdentifierStr String
