@@ -8,8 +8,10 @@ import Tapi.Models
       Models,
       ModelCtor,
       ModelOptions(..),
-      ModelsT
+      ModelsT,
+      ColumnOptions
     )
+import Control.Arrow (Arrow(first, second))
 
 data WaitlistAttributes = WaitlistAttributes {
     personId :: Integer

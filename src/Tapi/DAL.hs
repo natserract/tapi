@@ -8,7 +8,7 @@
 module Tapi.Dal 
   () where
 
-import Tapi.Models (CreateOptions, FindOptions, Models, SaveOptions)
+import Tapi.Models (CreateOptions, FindOptions, Models (initModel), SaveOptions, ModelOptions (ModelOptions))
 import Data.Semigroup (Option)
 
 type ID = Integer;
@@ -26,10 +26,10 @@ class DAL m a where
   create :: CreationAttributes a -> a -> Maybe (CreateOptions opt) -> m
   update :: m -> UpdateAttributesT a -> a -> SaveOptions m -> m
 
-
 instance Models moM moC => DAL moM moC where
   type CreationAttributes moC = moC
   type UpdateAttributesT moC = moC
 
-  create = create
+  -- create t t2 = do
+    -- initModel t "" ModelOptions {}
   update = update

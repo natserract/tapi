@@ -82,3 +82,8 @@ localEx = do
           return (step ++ [name])
         ) "First"
   return a
+
+
+<!-- Cool
+https://devtut.github.io/haskell/
+ -->
