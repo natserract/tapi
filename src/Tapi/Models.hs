@@ -9,6 +9,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Tapi.Models
   ( createModel
@@ -20,11 +21,12 @@ module Tapi.Models
   , CreateOptions(..)
   , FindOptions (..)
   , SaveOptions
+  , ColumnOptions
 ) where
 
 import Prelude hiding (id, init)
 
-import Tapi.Utils (Generic, (:=))
+import Tapi.Utils (Generic, (:=), RecordAccessor, getRecord)
 import Data.Semigroup (Option)
 
 data ColumnOptions
@@ -34,6 +36,18 @@ data ColumnOptions
     , defaultValue :: ()
   }
 
+type GetColumnOptions fie 
+  = RecordAccessor ColumnOptions fie
+
+-- | Get column options
+getColumnOptions :: 
+  ColumnOptions -> 
+  iel -> 
+  GetColumnOptions 
+  iel
+getColumnOptions = getRecord
+
+
 data ModelOptions
   = ModelOptions {
       omitNullModelOpt :: Bool
@@ -42,6 +56,8 @@ data ModelOptions
     , primaryKey :: Bool
     , values :: [String]
   }
+
+type GetModelOptions a = a -> ModelOptions -> a
 
 instance (Show ModelOptions) where
   show v = unlines 
@@ -64,7 +80,7 @@ data ModelCtor m
 
 data SetOptions
   = SetOptions {
-     raw :: Bool
+      raw :: Bool
     , reset :: Bool
   }
 
@@ -89,20 +105,20 @@ class Models (m :: *) (c :: *) | m -> c where
   type family Values c;
   
   -- Return the initialized model
-  init ::
+  initModel ::
     m
     -> ModelName
     -> ModelOptions
     -> ModelCtor m
   -- 
   -- Manage model options
-  manage :: m -> Manager m  
+  manageModel :: m -> Manager m  
 
 instance (Models a b, Monad ModelCtor) => Models a b where
   type Values b = b;
 
-  init modelAtrr modelName modelOpt = do
-    let return' = init modelAtrr modelName modelOpt
+  initModel modelAtrr modelName modelOpt = do
+    let return' = initModel modelAtrr modelName modelOpt
     case modelOpt of {
       ModelOptions {
         omitNullModelOpt = False
@@ -112,11 +128,11 @@ instance (Models a b, Monad ModelCtor) => Models a b where
         -- ...
         return'
       ;
-      ModelOptions {} -> ModelCtor {};
+      ModelOptions {..} -> ModelCtor {};
     }
     return'
 
-  manage = manage
+  manageModel = manageModel
 
 
 -- | Synonym for `init`
@@ -125,11 +141,11 @@ createModel :: (Models a b, Monad ModelCtor) =>
   -> ModelName
   -> ModelOptions
   -> ModelCtor a
-createModel = init
+createModel = initModel
 
 -- | Synonym for `manage`
 manageOptions :: (Models a b) => a -> Manager a
-manageOptions = manage
+manageOptions = manageModel
 
 -- 
 -- | Options
