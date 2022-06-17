@@ -28,7 +28,7 @@ infixl 4 :=
 data (:=) sh deriving (Eq, Show, Num)
 
 -- | Acceess record field
-type RecordAccessor 
+type RecordAccessor
   (r :: *) a = r -> a -> a
 
 -- | Get the value of a field.
@@ -38,8 +38,8 @@ type RecordAccessor
 
   type :: ^ RecordAccessor RecordT (RecordT -> FieldT)
 -}
-getRecord :: 
-  r -> 
-  a -> 
+getRecord ::
+  r ->
+  a ->
   RecordAccessor r a
 getRecord = getRecord

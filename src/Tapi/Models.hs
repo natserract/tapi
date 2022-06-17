@@ -8,8 +8,8 @@
 
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE UndecidableInstances   #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Tapi.Models
   ( createModel
@@ -28,10 +28,10 @@ module Tapi.Models
 
 import           Prelude        hiding (id, init)
 
+import           Data.Data      (Typeable)
 import           Data.Semigroup (Option)
 import           Data.Void      (Void)
 import           Tapi.Utils     (Generic, RecordAccessor, getRecord, (:=))
-import Data.Data (Typeable)
 
 data ColumnOptions
   = ColumnOptions {
@@ -103,7 +103,7 @@ type instance GetArg m (Option a) = m;
 type instance GetArg m ModelOptions = ModelReturnT m;
 
 data Error
-  = DatabaseError 
+  = DatabaseError
   | NilValue
   deriving (Show, Typeable)
 
@@ -111,7 +111,7 @@ data Error
 throwErrMsg :: Error -> [Char]
 throwErrMsg err = case err of
   DatabaseError -> "Database Error!"
-  NilValue -> "Object is Nil!"
+  NilValue      -> "Object is Nil!"
 
 data Identifier
   = IdentifierStr String
@@ -134,7 +134,7 @@ class Models (m :: *) (a :: *) | m -> a where
     -> ModelReturnT m
   --
   -- Manage model
-  manageModel :: 
+  manageModel ::
     m -> Manager m
   --
   -- Builds a new model instance and calls save on it
@@ -143,14 +143,14 @@ class Models (m :: *) (a :: *) | m -> a where
     -> Maybe a
     -> Maybe ops
     -> Either Error Void
-  -- 
+  --
   -- Search for a single instance by its primary key
   findByPk ::
     m
     -> Maybe Identifier
     -> Maybe ops
     -> Either Error Void
-  -- 
+  --
   -- ...
 
 -- | Scale up in future!
@@ -219,17 +219,17 @@ data Includeable
   }
 
 data WhereOptions a
-  = WhereAttributeHash 
+  = WhereAttributeHash
   | Where
-  | Json 
+  | Json
 
 -- | Representation for Options that are passed to any model creating a SELECT query
 data FindOptions a
   = FindOptions {
-      include:: Includeable
-    , order   :: Order
-    , limit   :: Integer
-    , offset  :: Integer
+      include  :: Includeable
+    , order    :: Order
+    , limit    :: Integer
+    , offset   :: Integer
     , whereOps ::  Maybe (WhereOptions a)
   }
 
