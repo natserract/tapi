@@ -4,37 +4,54 @@
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-missing-fields #-}
 
 module Tapi.Dal
   () where
 
 import           Data.Semigroup (Option)
-import           Tapi.Models    (CreateOptions, FindOptions,
-                                 ModelOptions (ModelOptions),
-                                 Models (initModel), SaveOptions)
+import     qualified      Tapi.Models   as M
+import Data.Void (Void)
+-- import Tapi.Models (FindOptions(whereOps, limit), WhereOptions)
 
 type ID = Integer;
 
 data DALMethod
   = DALMethod {
-      create'    :: forall c m. c -> Maybe (CreateOptions m)
-    , createAny' :: forall c opt m. c -> Maybe (CreateOptions opt) -> m
+      create'    :: forall c m. c -> Maybe (M.CreateOptions m)
+    , createAny' :: forall c opt m. c -> Maybe (M.CreateOptions opt) -> m
   }
 
 data Nil;
 
-class DAL m a where
+class DAL m a | m -> a where
   type family CreationAttributes a
   type family UpdateAttributesT a
 
-  create :: CreationAttributes a -> a -> Maybe (CreateOptions opt) -> m
-  update :: m -> UpdateAttributesT a -> a -> SaveOptions m -> m
+  create ::  
+    m -> 
+    Maybe (CreationAttributes a) -> 
+    Maybe (M.CreateOptions m) -> 
+    Void
 
--- "To obtain the Models after the arrow, we need the Models before the arrow.”
-instance Models moM moC => DAL moM moC where
-  type CreationAttributes moC = moC
-  type UpdateAttributesT moC = moC
+  get ::
+    m ->
+    Integer ->
+    Maybe (M.FindOptions m) ->
+    Void
 
-  -- create t t2 = do
-    -- initModel t "" ModelOptions {}
-  update = update
+instance M.Models moM mAttr => DAL moM mAttr where
+  type CreationAttributes mAttr = mAttr
+  type UpdateAttributesT mAttr = mAttr
+
+  create
+    = M.create
+
+  get m id ops
+    = M.findByPk m Nothing (Just M.FindOptions {
+      -- Here, omitted where options
+      --  whereOps = Just M.WhereAttributeHash  
+      whereOps = Nothing
+      , ..
+    })

@@ -39,6 +39,8 @@ applyWaitlistModel  = do
 
   createModel attr "Waitlist" options
 
+-- mkArchitect
+
 someFunc :: IO ()
 someFunc = do
   putStrLn "Hello Haskell"

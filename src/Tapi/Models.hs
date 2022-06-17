@@ -8,7 +8,6 @@
 
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
 module Tapi.Models
@@ -18,10 +17,11 @@ module Tapi.Models
   , ModelCtor(..)
   , ModelOptions(..)
   , ModelsT
-  , CreateOptions(..)
+  , CreateOptions (..)
   , FindOptions (..)
-  , SaveOptions
-  , ColumnOptions
+  , SaveOptions (..)
+  , ColumnOptions (..)
+  , WhereOptions(..)
 ) where
 
 import           Prelude        hiding (id, init)
@@ -108,8 +108,10 @@ data Identifier
 -- | The interface for Models
 type ModelsT a b
   = (Models a b, Monad ModelCtor) => ModelCtor a
-class Models (m :: *) (c :: *) | m -> c where
-  type family Values c;
+
+class Models (m :: *) (a :: *) | m -> a where
+  type family CreationAttributes a
+  type family UpdateAttributesT a
 
   -- Return the initialized model
   initModel ::
@@ -118,45 +120,50 @@ class Models (m :: *) (c :: *) | m -> c where
     -> ModelOptions
     -> ModelCtor m
   --
-  -- Manage model options
+  -- Manage model
   manageModel :: 
     m -> Manager m
   --
   -- Builds a new model instance and calls save on it
   create ::
     m
-    -> Maybe c
-    -> Maybe ModelOptions
+    -> Maybe a
+    -> Maybe ops
     -> Void
   -- 
   -- Search for a single instance by its primary key
   findByPk ::
     m
     -> Maybe Identifier
-    -> Maybe ModelOptions
-    -> m
+    -> Maybe ops
+    -> Void
+  -- 
+  -- ...
 
-instance (Models a b, Monad ModelCtor) => Models a b where
-  type Values b = b;
 
-  initModel modelAtrr modelName modelOpt = do
-    let return' = initModel modelAtrr modelName modelOpt
-    case modelOpt of {
-      ModelOptions {
-        omitNullModelOpt = False
-      } ->
-        -- Do some action here!
-        -- Depend on options
-        -- ...
-        return'
-      ;
-      ModelOptions {..} -> ModelCtor {};
-    }
-    return'
+-- | Scale up in future!
+-- instance (Models m c, Monad ModelCtor) => Models m c where
+--   type CreationAttributes c = c;
+--   type UpdateAttributesT c = c;
 
-  manageModel = manageModel
-  create = create
-  findByPk = findByPk
+--   initModel modelAtrr modelName modelOpt = do
+--     let return' = initModel modelAtrr modelName modelOpt
+--     case modelOpt of {
+--       ModelOptions {
+--         omitNullModelOpt = False
+--       } ->
+--         -- Do some action here!
+--         -- Depend on options
+--         -- ...
+--         return'
+--       ;
+--       ModelOptions {..} -> ModelCtor {};
+--     }
+--     return'
+
+--   manageModel = manageModel
+--   create = create
+--   findByPk = findByPk
 
 
 -- | Synonym for `init`
@@ -179,11 +186,11 @@ type instance CreateOptionsReturning Bool = Bool
 type instance CreateOptionsReturning [ss] = [ss]
 
 -- | Representation for Model.create options method
-data CreateOptions opt
+data CreateOptions a
   = CreateOptions {
-      fieldsCreateOpt   :: [opt]
+      fieldsCreateOpt   :: [a]
     , ignoreDuplicates  :: Bool
-    , returning         :: CreateOptionsReturning opt
+    , returning         :: CreateOptionsReturning a
     , validateCreateOpt :: (:=) Bool
     -- Dont' confuse ^ is just a synonym of Bool :: * (one kind)
   }
@@ -199,18 +206,24 @@ data Includeable
     , nested :: Maybe Bool
   }
 
+data WhereOptions a
+  = WhereAttributeHash 
+  | Where
+  | Json 
+
 -- | Representation for Options that are passed to any model creating a SELECT query
-data FindOptions opt
+data FindOptions a
   = FindOptions {
       include:: Includeable
     , order   :: Order
     , limit   :: Integer
     , offset  :: Integer
+    , whereOps ::  Maybe (WhereOptions a)
   }
 
-data SaveOptions opt
+data SaveOptions a
   = SaveOptions {
-      fieldsSaveOpt   :: [opt]
+      fieldsSaveOpt   :: [a]
     , validateSaveOpt :: Bool
     , omitNullSaveOpt :: Bool
   }
