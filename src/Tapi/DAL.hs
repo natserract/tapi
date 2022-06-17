@@ -18,12 +18,11 @@ import qualified Tapi.Models    as M
 
 type ID = Integer;
 class DAL m a | m -> a where
-  type family CreationAttributes a
-  type family UpdateAttributesT a
+  type family DALCreationAttributes a
 
   create ::
     m ->
-    Maybe (CreationAttributes a) ->
+    Maybe (DALCreationAttributes a) ->
     Maybe (M.CreateOptions m) ->
     Either M.Error Void
 
@@ -43,11 +42,13 @@ class DAL m a | m -> a where
   -- count
 
 instance M.Models m a => DAL m a where
-  type CreationAttributes a = a
-  type UpdateAttributesT a = a
+  type DALCreationAttributes a = a
+  -- Equation: ^ if `DALCreationAttributes a ~ a = a`
 
+  -- 
   create = M.create
 
+  -- 
   get m id ops =
     let result = M.findByPk m Nothing (Just M.FindOptions {
       -- Here, omitted where options
@@ -59,3 +60,5 @@ instance M.Models m a => DAL m a where
     case result of
       Left errT -> error $ M.throwErrMsg errT
       _         -> result
+
+  -- ...another implementation here

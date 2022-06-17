@@ -104,6 +104,7 @@ type instance GetArg m ModelOptions = ModelReturnT m;
 
 data Error
   = DatabaseError
+  | RequestValidationError
   | NilValue
   deriving (Show, Typeable)
 
@@ -111,6 +112,7 @@ data Error
 throwErrMsg :: Error -> [Char]
 throwErrMsg err = case err of
   DatabaseError -> "Database Error!"
+  RequestValidationError -> "Request Validation Error!"
   NilValue      -> "Object is Nil!"
 
 data Identifier
@@ -122,9 +124,13 @@ data Identifier
 type ModelsT a b
   = (Models a b) => ModelReturnT a
 
-class Models (m :: *) (a :: *) | m -> a where
-  type family CreationAttributes a
-  type family UpdateAttributesT a
+class Models (m :: *) (a :: *) |
+  m -> a 
+  -- `m -> a` states that `a` type is determined by `m`
+  -- For any given m you can only have one `a`. 
+  -- `a` should not be `a` free variable, it is determined by the `m` variables
+  -- 
+  where
 
   -- Return the initialized model
   initModel ::
@@ -155,9 +161,6 @@ class Models (m :: *) (a :: *) | m -> a where
 
 -- | Scale up in future!
 instance (Models m c, Monad ModelReturnT) => Models m c where
-  type CreationAttributes c = c;
-  type UpdateAttributesT c = c;
-
   initModel modelAtrr modelName modelOpt = do
     let return' = initModel modelAtrr modelName modelOpt
     case modelOpt of {
@@ -192,7 +195,7 @@ manageOptions = manageModel
 
 --
 -- | Options
---
+-- ~ Open type families
 type family CreateOptionsReturning k
 type instance CreateOptionsReturning Bool = Bool
 type instance CreateOptionsReturning [ss] = [ss]
