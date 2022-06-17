@@ -6,22 +6,31 @@
 {-# LANGUAGE TypeOperators     #-}
 {-# OPTIONS_GHC -Wno-missing-methods #-}
 {-# LANGUAGE KindSignatures    #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DataKinds #-}
 
 module Tapi.Utils
   ( Generic
-  , All
+  , Nil
   , (:=)
   , RecordAccessor (..)
   , getRecord
   ) where
 
 import           Data.Kind (Constraint)
+import GHC.Base (Nat, Symbol)
 
 -- (* -> *) -> (* -> *) -> *
 type Generic i o = forall x. i x -> o x
 
 -- *
-data All = All
+data Nil
 
 -- * -> *
 infixl 4 :=
@@ -43,3 +52,17 @@ getRecord ::
   a ->
   RecordAccessor r a
 getRecord = getRecord
+
+-- | Compared candidate type
+isSameType :: (a ~ b) => a -> b -> a
+isSameType = isSameType
+-- 
+-- ~ Type level
+-- # Closed type family
+-- 
+-- IsSameType Int Int ~ Int
+-- IsSameType String Int ~ String
+-- 
+type family IsSameType (ρ :: k) (τ :: k) :: * where
+  IsSameType a a = a
+  IsSameType a b = a
