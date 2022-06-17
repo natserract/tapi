@@ -1,23 +1,27 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
-module Tapi.Dal 
+module Tapi.Dal
   () where
 
-import Tapi.Models (CreateOptions, FindOptions, Models (initModel), SaveOptions, ModelOptions (ModelOptions))
-import Data.Semigroup (Option)
+import           Data.Semigroup (Option)
+import           Tapi.Models    (CreateOptions, FindOptions,
+                                 ModelOptions (ModelOptions),
+                                 Models (initModel), SaveOptions)
 
 type ID = Integer;
 
-data DALMethod 
+data DALMethod
   = DALMethod {
-      create' :: forall c m. c -> Maybe (CreateOptions m)
-    , createAny' ::  forall c opt m. c -> Maybe (CreateOptions opt) -> m
-  } 
+      create'    :: forall c m. c -> Maybe (CreateOptions m)
+    , createAny' :: forall c opt m. c -> Maybe (CreateOptions opt) -> m
+  }
+
+data Nil;
 
 class DAL m a where
   type family CreationAttributes a
@@ -26,6 +30,7 @@ class DAL m a where
   create :: CreationAttributes a -> a -> Maybe (CreateOptions opt) -> m
   update :: m -> UpdateAttributesT a -> a -> SaveOptions m -> m
 
+-- "To obtain the Models after the arrow, we need the Models before the arrow.”
 instance Models moM moC => DAL moM moC where
   type CreationAttributes moC = moC
   type UpdateAttributesT moC = moC

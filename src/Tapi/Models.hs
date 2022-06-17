@@ -1,15 +1,15 @@
 
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE TypeFamilies           #-}
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 
+{-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards        #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 module Tapi.Models
   ( createModel
@@ -24,26 +24,27 @@ module Tapi.Models
   , ColumnOptions
 ) where
 
-import Prelude hiding (id, init)
+import           Prelude        hiding (id, init)
 
-import Tapi.Utils (Generic, (:=), RecordAccessor, getRecord)
-import Data.Semigroup (Option)
+import           Data.Semigroup (Option)
+import           Data.Void      (Void)
+import           Tapi.Utils     (Generic, RecordAccessor, getRecord, (:=))
 
 data ColumnOptions
   = ColumnOptions {
-      allowNull :: Bool
-    , field :: String
+      allowNull    :: Bool
+    , field        :: String
     , defaultValue :: ()
   }
 
-type GetColumnOptions fie 
+type GetColumnOptions fie
   = RecordAccessor ColumnOptions fie
 
 -- | Get column options
-getColumnOptions :: 
-  ColumnOptions -> 
-  iel -> 
-  GetColumnOptions 
+getColumnOptions ::
+  ColumnOptions ->
+  iel ->
+  GetColumnOptions
   iel
 getColumnOptions = getRecord
 
@@ -51,16 +52,16 @@ getColumnOptions = getRecord
 data ModelOptions
   = ModelOptions {
       omitNullModelOpt :: Bool
-    , timestamps :: Bool
-    , paranoid :: Bool
-    , primaryKey :: Bool
-    , values :: [String]
+    , timestamps       :: Bool
+    , paranoid         :: Bool
+    , primaryKey       :: Bool
+    , values           :: [String]
   }
 
 type GetModelOptions a = a -> ModelOptions -> a
 
 instance (Show ModelOptions) where
-  show v = unlines 
+  show v = unlines
     [ "Options {"
      , " omitNullModelOpt         = " ++ show (omitNullModelOpt v)
      , " timestamps       = " ++ show (timestamps v)
@@ -80,7 +81,7 @@ data ModelCtor m
 
 data SetOptions
   = SetOptions {
-      raw :: Bool
+      raw   :: Bool
     , reset :: Bool
   }
 
@@ -89,7 +90,7 @@ newtype KeyOfAttributes m = KeyOfAttributes m
 data Manager m
   = Manager {
       setAttributes :: forall key. key -> SetOptions -> KeyOfAttributes m
-    , setOptions' :: ModelOptions -> ModelOptions
+    , setOptions'   :: ModelOptions -> ModelOptions
   }
 
 type ModelName = String;
@@ -98,21 +99,42 @@ type family GetArg m o;
 type instance GetArg m (Option a) = m;
 type instance GetArg m ModelOptions = ModelCtor m;
 
+data Identifier
+  = IdentifierStr String
+  | IdentifierNum Integer
+  | IdentifierV Void
+
+
 -- | The interface for Models
-type ModelsT a b 
+type ModelsT a b
   = (Models a b, Monad ModelCtor) => ModelCtor a
 class Models (m :: *) (c :: *) | m -> c where
   type family Values c;
-  
+
   -- Return the initialized model
   initModel ::
     m
     -> ModelName
     -> ModelOptions
     -> ModelCtor m
-  -- 
+  --
   -- Manage model options
-  manageModel :: m -> Manager m  
+  manageModel :: 
+    m -> Manager m
+  --
+  -- Builds a new model instance and calls save on it
+  create ::
+    m
+    -> Maybe c
+    -> Maybe ModelOptions
+    -> Void
+  -- 
+  -- Search for a single instance by its primary key
+  findByPk ::
+    m
+    -> Maybe Identifier
+    -> Maybe ModelOptions
+    -> m
 
 instance (Models a b, Monad ModelCtor) => Models a b where
   type Values b = b;
@@ -133,6 +155,8 @@ instance (Models a b, Monad ModelCtor) => Models a b where
     return'
 
   manageModel = manageModel
+  create = create
+  findByPk = findByPk
 
 
 -- | Synonym for `init`
@@ -147,9 +171,9 @@ createModel = initModel
 manageOptions :: (Models a b) => a -> Manager a
 manageOptions = manageModel
 
--- 
+--
 -- | Options
--- 
+--
 type family CreateOptionsReturning k
 type instance CreateOptionsReturning Bool = Bool
 type instance CreateOptionsReturning [ss] = [ss]
@@ -157,9 +181,9 @@ type instance CreateOptionsReturning [ss] = [ss]
 -- | Representation for Model.create options method
 data CreateOptions opt
   = CreateOptions {
-      fieldsCreateOpt :: [opt]
-    , ignoreDuplicates :: Bool
-    , returning :: CreateOptionsReturning opt
+      fieldsCreateOpt   :: [opt]
+    , ignoreDuplicates  :: Bool
+    , returning         :: CreateOptionsReturning opt
     , validateCreateOpt :: (:=) Bool
     -- Dont' confuse ^ is just a synonym of Bool :: * (one kind)
   }
@@ -171,22 +195,22 @@ data Order
 
 data Includeable
   = Includeable {
-      all :: Bool
-    , nested :: Maybe Bool 
+      all    :: Bool
+    , nested :: Maybe Bool
   }
 
 -- | Representation for Options that are passed to any model creating a SELECT query
 data FindOptions opt
   = FindOptions {
       include:: Includeable
-    , order :: Order
-    , limit :: Integer
-    , offset :: Integer
+    , order   :: Order
+    , limit   :: Integer
+    , offset  :: Integer
   }
 
 data SaveOptions opt
   = SaveOptions {
-      fieldsSaveOpt :: [opt]
+      fieldsSaveOpt   :: [opt]
     , validateSaveOpt :: Bool
     , omitNullSaveOpt :: Bool
   }

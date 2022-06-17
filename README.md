@@ -87,3 +87,8 @@ localEx = do
 <!-- Cool
 https://devtut.github.io/haskell/
  -->
+
+
+## Good to Reads:
+- [https://aphyr.com/posts/342-typing-the-technical-interview](https://aphyr.com/posts/342-typing-the-technical-interview)
+- [https://devtut.github.io/haskell/](https://devtut.github.io/haskell/)

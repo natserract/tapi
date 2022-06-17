@@ -1,13 +1,13 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE EmptyDataDeriving #-}
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TypeOperators     #-}
 {-# OPTIONS_GHC -Wno-missing-methods #-}
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE KindSignatures    #-}
 
-module Tapi.Utils 
+module Tapi.Utils
   ( Generic
   , All
   , (:=)
@@ -15,7 +15,7 @@ module Tapi.Utils
   , getRecord
   ) where
 
-import Data.Kind (Constraint)
+import           Data.Kind (Constraint)
 
 -- (* -> *) -> (* -> *) -> *
 type Generic i o = forall x. i x -> o x
@@ -37,5 +37,5 @@ type RecordAccessor (r :: *) a = r -> a -> a
 
   type :: ^ RecordAccessor RecordT (RecordT -> FieldT)
 -}
-getRecord :: r -> fie -> RecordAccessor r fie
+getRecord :: r -> a -> RecordAccessor r a
 getRecord = getRecord
