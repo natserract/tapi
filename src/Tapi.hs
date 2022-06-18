@@ -41,12 +41,6 @@ applyWaitlistModel  = do
 
 -- mkArchitect
 
-go :: Either Error Bool -> String
-go a = 
-  case a of
-    Left void -> "Void"
-    Right True -> "True"
-
 
 someFunc :: IO ()
 someFunc = do

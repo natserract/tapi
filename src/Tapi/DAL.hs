@@ -22,13 +22,13 @@ class DAL m a | m -> a where
   create ::
     m ->
     Maybe a ->
-    Maybe (M.CreateOptions m) ->
+    M.BlockOptionsTupl (M.CreateOptions a) ->
     Either M.Error Void
 
   get ::
     m ->
     Integer ->
-    Maybe (M.FindOptions m) ->
+    M.BlockOptionsTupl M.FindOptions ->
     Either M.Error Void
 
   -- TODO:
@@ -53,6 +53,7 @@ instance M.Models m a => DAL m a where
       , ..
       -- .^ symbol (..), all field labels are brought into scope
     }) in
+
     case result of
       Left errT -> error $ M.throwErrMsg errT
       _         -> result

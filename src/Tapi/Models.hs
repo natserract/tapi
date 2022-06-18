@@ -26,6 +26,12 @@ module Tapi.Models
   , Error(..)
   , Transaction(..)
   , throwErrMsg
+  , CommonOptions(..)
+  , BlockOptions
+  , BlockOptionsTupl
+  , Includeable(..)
+  , accessFirstBlockOptions
+  , accessSecondBlockOptions
 ) where
 
 import           Prelude        hiding (id, init)
@@ -129,8 +135,8 @@ data Identifier
   | IdentifierV Void
 
 -- | The interface for Models
-type ModelsT a b
-  = (Models a b) => ModelReturnT a
+type ModelsT m a
+  = (Models m a) => ModelReturnT m
 
 class Models (m :: *) (a :: *) |
   m -> a
@@ -155,7 +161,7 @@ class Models (m :: *) (a :: *) |
   create ::
     m
     -> Maybe a
-    -> Maybe ops
+    -> ops
     -> Either Error Void
   --
   -- Search for a single instance by its primary key
@@ -198,7 +204,7 @@ createModel :: (Models m a) =>
 createModel = initModel
 
 -- | Synonym for `manage`
-manageOptions :: (Models a b) => a -> Manager a
+manageOptions :: (Models m a) => m -> Manager m
 manageOptions = manageModel
 
 --
@@ -223,7 +229,6 @@ data CreateOptions a
       fieldsCreateOpt   :: [a]
     , ignoreDuplicates  :: Bool
     , returning         :: CreateOptionsReturning a
-    , transaction       :: Maybe Transaction
     , validateCreateOpt :: (:=) Bool
     -- Dont' confuse ^ is just a synonym of Bool :: * (one kind)
   }
@@ -239,19 +244,19 @@ data Includeable
     , nested :: Maybe Bool
   }
 
-data WhereOptions a
+data WhereOptions
   = WhereAttributeHash
   | Where
   | Json
 
 -- | Representation for Options that are passed to any model creating a SELECT query
-data FindOptions a
+data FindOptions
   = FindOptions {
       include  :: Includeable
     , order    :: Order
     , limit    :: Integer
     , offset   :: Integer
-    , whereOps ::  Maybe (WhereOptions a)
+    , whereOps ::  Maybe WhereOptions
   }
 
 data SaveOptions a
@@ -260,3 +265,40 @@ data SaveOptions a
     , validateSaveOpt :: Bool
     , omitNullSaveOpt :: Bool
   }
+
+newtype CommonOptions
+  = CommonOptions {
+    transaction :: Maybe Transaction
+  }
+
+-- | Type with multiple record constructor
+-- ~ sum type strategy
+--
+type BlockOptions ops
+  = Either CommonOptions ops
+
+-- Problems:
+{--When we pass this ex: `
+  get mod id $ Left M.CommonOptions {
+    transaction = transact
+  }`
+
+  The question here, how we put another options, e.g from `FindOptions`
+
+  So, i think we can use *tuple values* strategy
+  (CommonOptions, *Options)
+
+  F: get mod id $ (CommonOptions, FindOptions)
+
+  Access:
+    *1 (fst ops) ~ CommonOptions -> get first value
+    *2 (snd ops) ~ FindOptions -> get second
+--}
+
+type BlockOptionsTupl o = (Maybe CommonOptions, Maybe o)
+
+accessFirstBlockOptions :: BlockOptionsTupl o -> Maybe CommonOptions
+accessFirstBlockOptions = fst -- (x, y) -> x
+
+accessSecondBlockOptions :: BlockOptionsTupl o -> Maybe o
+accessSecondBlockOptions = snd -- (x, y) -> y
