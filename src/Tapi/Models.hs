@@ -8,6 +8,7 @@
 
 {-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
@@ -23,6 +24,7 @@ module Tapi.Models
   , ColumnOptions (..)
   , WhereOptions(..)
   , Error(..)
+  , Transaction(..)
   , throwErrMsg
 ) where
 
@@ -40,17 +42,19 @@ data ColumnOptions
     , defaultValue :: ()
   }
 
-type GetColumnOptions fie
-  = RecordAccessor ColumnOptions fie
-
 -- | Get column options
 getColumnOptions ::
   ColumnOptions ->
-  iel ->
-  GetColumnOptions
-  iel
+  field ->
+  RecordAccessor ColumnOptions field
 getColumnOptions = getRecord
-
+--
+-- ~ Type level
+--
+type family GetColumnOptions
+  (c :: ColumnOptions)
+  (field) :: RecordAccessor ColumnOptions field where
+  -- ...
 
 data ModelOptions
   = ModelOptions {
@@ -60,19 +64,23 @@ data ModelOptions
     , primaryKey       :: Bool
     , values           :: [String]
   }
-
-type GetModelOptions a = a -> ModelOptions -> a
-
 instance (Show ModelOptions) where
   show v = unlines
     [ "Options {"
      , " omitNullModelOpt         = " ++ show (omitNullModelOpt v)
-     , " timestamps       = " ++ show (timestamps v)
-     , " paranoid         = " ++ show (paranoid v)
-     , " primaryKey       = " ++ show (primaryKey v)
-     , " values           = " ++ show (values v)
+     , " timestamps               = " ++ show (timestamps v)
+     , " paranoid                 = " ++ show (paranoid v)
+     , " primaryKey               = " ++ show (primaryKey v)
+     , " values                   = " ++ show (values v)
      , "}"
     ]
+
+-- | Get model options
+getModelOptions ::
+  ModelOptions ->
+  field ->
+  RecordAccessor ModelOptions field
+getModelOptions = getRecord
 
 -- | Show all model options
 showOptions :: ModelOptions -> String
@@ -111,9 +119,9 @@ data Error
 -- | Throwing error based on `M.Error`
 throwErrMsg :: Error -> [Char]
 throwErrMsg err = case err of
-  DatabaseError -> "Database Error!"
+  DatabaseError          -> "Database Error!"
   RequestValidationError -> "Request Validation Error!"
-  NilValue      -> "Object is Nil!"
+  NilValue               -> "Object is Nil!"
 
 data Identifier
   = IdentifierStr String
@@ -125,11 +133,11 @@ type ModelsT a b
   = (Models a b) => ModelReturnT a
 
 class Models (m :: *) (a :: *) |
-  m -> a 
+  m -> a
   -- `m -> a` states that `a` type is determined by `m`
-  -- For any given m you can only have one `a`. 
+  -- For any given m you can only have one `a`.
   -- `a` should not be `a` free variable, it is determined by the `m` variables
-  -- 
+  --
   where
 
   -- Return the initialized model
@@ -200,12 +208,22 @@ type family CreateOptionsReturning k
 type instance CreateOptionsReturning Bool = Bool
 type instance CreateOptionsReturning [ss] = [ss]
 
+data Transaction
+  = READ_UNCOMMITTED
+  | READ_COMMITTED
+  | REPEATABLE_READ
+  | SERIALIZABLE
+  | DEFERRED
+  | IMMEDIATE
+  | EXCLUSIVE
+
 -- | Representation for Model.create options method
 data CreateOptions a
   = CreateOptions {
       fieldsCreateOpt   :: [a]
     , ignoreDuplicates  :: Bool
     , returning         :: CreateOptionsReturning a
+    , transaction       :: Maybe Transaction
     , validateCreateOpt :: (:=) Bool
     -- Dont' confuse ^ is just a synonym of Bool :: * (one kind)
   }

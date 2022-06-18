@@ -17,12 +17,11 @@ import           Data.Void      (Void)
 import qualified Tapi.Models    as M
 
 type ID = Integer;
-class DAL m a | m -> a where
-  type family DALCreationAttributes a
 
+class DAL m a | m -> a where
   create ::
     m ->
-    Maybe (DALCreationAttributes a) ->
+    Maybe a ->
     Maybe (M.CreateOptions m) ->
     Either M.Error Void
 
@@ -42,18 +41,15 @@ class DAL m a | m -> a where
   -- count
 
 instance M.Models m a => DAL m a where
-  type DALCreationAttributes a = a
-  -- Equation: ^ if `DALCreationAttributes a ~ a = a`
-
-  -- 
+  --
   create = M.create
 
-  -- 
+  --
   get m id ops =
     let result = M.findByPk m Nothing (Just M.FindOptions {
       -- Here, omitted where options
-      --  whereOps = Just M.WhereAttributeHash
-      whereOps = Nothing
+       whereOps = Just M.WhereAttributeHash
+      -- whereOps = Nothing
       , ..
       -- .^ symbol (..), all field labels are brought into scope
     }) in

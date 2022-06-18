@@ -1,19 +1,19 @@
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE EmptyDataDeriving #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs             #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DeriveAnyClass       #-}
+{-# LANGUAGE EmptyDataDeriving    #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE RankNTypes           #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# OPTIONS_GHC -Wno-missing-methods #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE AllowAmbiguousTypes  #-}
+{-# LANGUAGE ConstraintKinds      #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE KindSignatures       #-}
+{-# LANGUAGE PolyKinds            #-}
+{-# LANGUAGE TypeApplications     #-}
+{-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DataKinds #-}
 
 module Tapi.Utils
   ( Generic
@@ -24,7 +24,7 @@ module Tapi.Utils
   ) where
 
 import           Data.Kind (Constraint)
-import GHC.Base (Nat, Symbol)
+import           GHC.Base  (Nat, Symbol)
 
 -- (* -> *) -> (* -> *) -> *
 type Generic i o = forall x. i x -> o x
@@ -56,13 +56,13 @@ getRecord = getRecord
 -- | Compared candidate type
 isSameType :: (a ~ b) => a -> b -> a
 isSameType = isSameType
--- 
+--
 -- ~ Type level
 -- # Closed type family
--- 
+--
 -- IsSameType Int Int ~ Int
 -- IsSameType String Int ~ String
--- 
+--
 type family IsSameType (ρ :: k) (τ :: k) :: * where
   IsSameType a a = a
   IsSameType a b = a

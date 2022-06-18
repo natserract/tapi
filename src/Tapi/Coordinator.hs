@@ -1,40 +1,37 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE RecordWildCards        #-}
+{-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeSynonymInstances   #-}
+{-# LANGUAGE UndecidableInstances   #-}
+{-# OPTIONS_GHC -Wno-missing-fields #-}
 
 module Tapi.Coordinator where
 
+import qualified Tapi.Dal    as D
 import qualified Tapi.Models as M
-import qualified Tapi.Dal as D
 
-import Data.Void (Void)
+import           Data.Void   (Void)
+import           Tapi.Models (CreateOptions (transaction))
 
-class CreateCoordinator m a c | m -> a where
-  type family DAL m a c
+class CreateCoordinator m a | m -> a where
+  type CreationAttributes a
 
   create ::
     m
-    -> c
-    -> transact
-    -> Void 
+    -> CreationAttributes a
+    -> Maybe M.Transaction
+    -> Either M.Error Void
 
-instance D.DAL m a => CreateCoordinator m a c where
-  type DAL m a c = a
-  
--- type family ListElems a = b | b -> a
--- type instance ListElems [a] = a
+instance D.DAL m a => CreateCoordinator m a where
+  type CreationAttributes a = a
 
--- class Concat a b where
---   type ConcatTy a b
---   trans :: a -> b -> ConcatTy a b
---   reves :: ConcatTy a b -> b -> a
-
--- instance Num String => Concat Int String where
---   type ConcatTy Int String = Bool
---   trans x y = False
---   reves a b = 2
+  create mod params transact =
+      D.create mod (Just params) $ Just M.CreateOptions {
+        transaction = transact
+        , ..
+      }
