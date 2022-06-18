@@ -1,18 +1,21 @@
+# TAPI
 
-Designing software with types.
+Designing backend architecture with types. *"stronger is your type system more flexibility you get!"*
 
-Some words:
-- "design flexible and reusable object-oriented software"
-- "that is, objects that are easier to implement, change, test, and reuse."
-- "Software Http types for sever"
+## Introduction
+Haskell its powerful type system its a great support for type-level programming. Type-level Programming (TLP) is writing programs that run at compile-time, 
+unlike term-level programming which is writing programs that run at run-time. Types can turn possible runtime errors into compile-time errors.
 
-Domain (TLD) Structure:
+## Goals
+Learn and self-implement type level programming. *I know, Haskell has high learning curve, its hard to grasp. But it never hurts to try right?"*. Last but  not least, if you doing this? it's like being a scientist.
+
+
+## Domain (TLD) Structure:
 
 - \ TLD:
 ```sh
 Models -> DAL -> Coordinator -> Controllers
 ```
-
-## Good to Reads:
+## Additional Reads:
 - [https://aphyr.com/posts/342-typing-the-technical-interview](https://aphyr.com/posts/342-typing-the-technical-interview)
 - [https://devtut.github.io/haskell/](https://devtut.github.io/haskell/)
