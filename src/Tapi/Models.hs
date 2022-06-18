@@ -39,7 +39,7 @@ import           Prelude        hiding (id, init)
 import           Data.Data      (Typeable)
 import           Data.Semigroup (Option)
 import           Data.Void      (Void)
-import           Tapi.Utils     (Generic, RecordAccessor, getRecord, (:=))
+import           Tapi.Utils     (Generic, RecordAccessor, getRecord, (:-))
 
 data ColumnOptions
   = ColumnOptions {
@@ -229,7 +229,7 @@ data CreateOptions a
       fieldsCreateOpt   :: [a]
     , ignoreDuplicates  :: Bool
     , returning         :: CreateOptionsReturning a
-    , validateCreateOpt :: (:=) Bool
+    , validateCreateOpt :: (:-) Bool
     -- Dont' confuse ^ is just a synonym of Bool :: * (one kind)
   }
 data Order
@@ -302,3 +302,5 @@ accessFirstBlockOptions = fst -- (x, y) -> x
 
 accessSecondBlockOptions :: BlockOptionsTupl o -> Maybe o
 accessSecondBlockOptions = snd -- (x, y) -> y
+
+-- 

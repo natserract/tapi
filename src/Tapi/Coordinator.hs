@@ -12,7 +12,7 @@ module Tapi.Coordinator
   , ReadCoordinator(..)
   )where
 
-import qualified Tapi.Dal    as D
+import qualified Tapi.DAL    as D
 import qualified Tapi.Models as M
 
 import           Data.Void   (Void)

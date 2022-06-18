@@ -7,10 +7,8 @@
 {-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 
-module Tapi.Dal
-  ( DAL (..)
-  ,
-  ) where
+module Tapi.DAL
+  ( DAL (..) ) where
 
 import           Data.Semigroup (Option)
 import           Data.Void      (Void)

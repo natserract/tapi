@@ -16,9 +16,10 @@
 module Tapi.Utils
   ( Generic
   , Nil
-  , (:=)
   , RecordAccessor (..)
   , getRecord
+  , type ($$)
+  , type (:-)
   ) where
 
 import           Data.Kind (Constraint)
@@ -30,9 +31,9 @@ type Generic i o = forall x. i x -> o x
 -- *
 data Nil
 
--- * -> *
-infixl 4 :=
-data (:=) sh deriving (Eq, Show, Num)
+-- a -> b
+type family (:-) (f :: a) :: b where
+  (:-) a = a
 
 -- | Acceess record field
 type RecordAccessor
@@ -64,3 +65,7 @@ isSameType = isSameType
 type family IsSameType (ρ :: k) (τ :: k) :: * where
   IsSameType a a = a
   IsSameType a b = a
+
+-- | Function application.
+type family ($$) (f :: a -> b)  (x :: a) :: b where
+  f $$ x = f x
